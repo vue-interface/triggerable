@@ -4876,21 +4876,46 @@ function transition(el, defaultValue) {
      */
     cancel: {
       type: Function,
-      "default": function _default(vue) {
-        return new Promise(function (resolve) {
-          vue.close(resolve);
+      "default": function _default(e) {
+        var _this = this;
+
+        return new Promise(function (resolve, reject) {
+          _this.$emit('cancel', e, resolve, reject);
+
+          if (!e.defaultPrevented) {
+            return _this.close(function () {
+              return resolve(e);
+            });
+          }
+
+          reject(new Error('Cancelation rejected!'));
         });
       }
     },
 
     /**
-     * The display class.
+     * The confirm callback. 
      *
-     * @type {String}
+     * @type {Function}
+     * @return {Promise}
      */
-    displayClass: {
-      type: String,
-      "default": 'display'
+    confirm: {
+      type: Function,
+      "default": function _default(e) {
+        var _this2 = this;
+
+        return new Promise(function (resolve, reject) {
+          _this2.$emit('confirm', e);
+
+          if (!e.defaultPrevented) {
+            return _this2.close(function () {
+              return resolve(e);
+            });
+          }
+
+          reject(new Error('Confirmation rejected!'));
+        });
+      }
     },
 
     /**
@@ -4964,11 +4989,11 @@ function transition(el, defaultValue) {
      * @return {void}
      */
     initializeTrigger: function initializeTrigger(el) {
-      var _this = this;
+      var _this3 = this;
 
       (isString(this.trigger) ? this.trigger.split(' ') : this.trigger).forEach(function (trigger) {
         el.addEventListener(trigger, function (event) {
-          _this.toggle();
+          _this3.toggle();
 
           event.preventDefault();
         });
@@ -5004,10 +5029,10 @@ function transition(el, defaultValue) {
      * @return void
      */
     initializeSelector: function initializeSelector(selector) {
-      var _this2 = this;
+      var _this4 = this;
 
       document.querySelectorAll(selector).forEach(function (el) {
-        return _this2.initializeTrigger(el);
+        return _this4.initializeTrigger(el);
       });
     },
 
@@ -5017,15 +5042,15 @@ function transition(el, defaultValue) {
      * @return this
      */
     focus: function focus() {
-      var _this3 = this;
+      var _this5 = this;
 
       this.$nextTick(function () {
-        var el = _this3.$el.querySelector('input, select, textarea');
+        var el = _this5.$el.querySelector('input, select, textarea');
 
         if (el) {
           el.focus();
         } else {
-          _this3.$el.focus();
+          _this5.$el.focus();
         }
       });
       return this;
@@ -5037,19 +5062,19 @@ function transition(el, defaultValue) {
      * @return this
      */
     open: function open(fn) {
-      var _this4 = this;
+      var _this6 = this;
 
       if (!this.isDisplaying) {
         this.$nextTick(function () {
-          _this4.isDisplaying = true;
-          transition(_this4.$el, _this4.duration).then(function () {
-            _this4.isShowing = true;
+          _this6.isDisplaying = true;
+          transition(_this6.$el, _this6.duration).then(function () {
+            _this6.isShowing = true;
 
             if (isFunction(fn)) {
-              fn(_this4);
+              fn(_this6);
             }
 
-            _this4.$emit('open');
+            _this6.$emit('open');
           });
         });
       }
@@ -5063,19 +5088,19 @@ function transition(el, defaultValue) {
      * @return this
      */
     close: function close(fn) {
-      var _this5 = this;
+      var _this7 = this;
 
       if (this.isShowing) {
         this.$nextTick(function () {
-          _this5.isShowing = false;
-          transition(_this5.$el, _this5.duration).then(function (delay) {
-            _this5.isDisplaying = false;
+          _this7.isShowing = false;
+          transition(_this7.$el, _this7.duration).then(function (delay) {
+            _this7.isDisplaying = false;
 
             if (isFunction(fn)) {
-              fn(_this5);
+              fn(_this7);
             }
 
-            _this5.$emit('close', event);
+            _this7.$emit('close');
           });
         });
       }
@@ -5092,7 +5117,7 @@ function transition(el, defaultValue) {
       if (!this.isShowing) {
         this.open();
       } else {
-        this.cancel(this);
+        this.cancel();
       }
 
       return this;
@@ -5100,9 +5125,7 @@ function transition(el, defaultValue) {
   },
   computed: {
     triggerableClasses: function triggerableClasses() {
-      var _ref;
-
-      return _ref = {}, _defineProperty(_ref, this.showClass, this.isShowing), _defineProperty(_ref, this.displayClass, this.isDisplaying), _ref;
+      return _defineProperty({}, this.showClass, this.isShowing);
     }
   },
   watch: {
