@@ -12,21 +12,38 @@ export default {
          */
         cancel: {
             type: Function,
-            default(vue) {
-                return new Promise((resolve) => {
-                    vue.close(resolve);
+            default(e) {
+                return new Promise((resolve, reject) => {
+                    this.$emit('cancel', e, resolve, reject);
+
+                    if(!e.defaultPrevented) {                    
+                        return this.close(() => resolve(e));
+                    }
+                    
+                    reject(new Error('Cancelation rejected!'));
                 });
             }
         },
 
         /**
-         * The display class.
+         * The confirm callback. 
          *
-         * @type {String}
+         * @type {Function}
+         * @return {Promise}
          */
-        displayClass: {
-            type: String,
-            default: 'display'
+        confirm: {
+            type: Function,
+            default(e) {
+                return new Promise((resolve, reject) => {
+                    this.$emit('confirm', e);
+
+                    if(!e.defaultPrevented) {                    
+                        return this.close(() => resolve(e));
+                    }
+                    
+                    reject(new Error('Confirmation rejected!'));
+                });
+            }
         },
 
         /**
@@ -171,18 +188,18 @@ export default {
          *
          * @return this
          */
-        open(fn) {
+        open(fn) {            
             if(!this.isDisplaying) {
                 this.$nextTick(() => {
                     this.isDisplaying = true;
 
                     transition(this.$el, this.duration).then(() => {
                         this.isShowing = true;
-                        
+                    
                         if(isFunction(fn)) {
                             fn(this);
                         }
-                        
+                    
                         this.$emit('open');
                     });
                 });
@@ -208,7 +225,7 @@ export default {
                             fn(this);
                         }
 
-                        this.$emit('close', event);
+                        this.$emit('close');
                     });
                 });
             }
@@ -226,7 +243,7 @@ export default {
                 this.open();
             }
             else {
-                this.cancel(this);
+                this.cancel();
             }
 
             return this;
@@ -238,8 +255,7 @@ export default {
 
         triggerableClasses() {
             return {
-                [this.showClass]: this.isShowing,
-                [this.displayClass]: this.isDisplaying,
+                [this.showClass]: this.isShowing
             };
         }
 
